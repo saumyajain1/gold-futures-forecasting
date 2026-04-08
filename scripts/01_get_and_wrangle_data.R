@@ -1,30 +1,10 @@
-required_packages <- c("quantmod", "dplyr", "readr", "tidyr")
-missing_packages <- required_packages[
-  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
-]
-
-if (length(missing_packages) > 0) {
-  stop(
-    "Install these packages first: ",
-    paste(missing_packages, collapse = ", "),
-    call. = FALSE
-  )
-}
-
-suppressPackageStartupMessages({
-  library(quantmod)
-  library(dplyr)
-  library(readr)
-  library(tidyr)
-})
-
-if (file.exists("gold-futures-forecasting.Rproj")) {
-  project_root <- "."
-} else if (file.exists("../gold-futures-forecasting.Rproj")) {
-  project_root <- ".."
+if (file.exists("scripts/utils.R")) {
+  source("scripts/utils.R")
 } else {
-  stop("Run this script from the project root or the scripts folder.", call. = FALSE)
+  source("utils.R")
 }
+
+project_root <- setup_project(c("quantmod", "dplyr", "readr", "tidyr"))
 
 raw_dir <- file.path(project_root, "data", "raw")
 processed_dir <- file.path(project_root, "data", "processed")
