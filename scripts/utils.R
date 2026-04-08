@@ -45,3 +45,7 @@ show_and_save_plot <- function(plot, path = NULL, width = 8, height = 6, dpi = 3
     ggsave(path, plot = plot, width = width, height = height, dpi = dpi)
   }
 }
+
+rmse <- function(actual, forecast) {
+  sqrt(mean((actual - forecast)^2, na.rm = TRUE))
+}
