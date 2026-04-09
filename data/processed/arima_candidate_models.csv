@@ -1,0 +1,5 @@
+p,d,q,model,include_drift,method
+2,1,2,auto_selected,TRUE,"ARIMA(2,1,2) with drift"
+1,1,2,arima_112,TRUE,"ARIMA(1,1,2) with drift"
+2,1,1,arima_211,TRUE,"ARIMA(2,1,1) with drift"
+1,1,1,arima_111,TRUE,"ARIMA(1,1,1) with drift"
