@@ -8,9 +8,20 @@ project_root <- setup_project(c("readr", "dplyr", "ggplot2", "tidyr", "forcats",
 
 processed_dir <- file.path(project_root, "data", "processed")
 figures_dir <- file.path(project_root, "figures")
+cleanup_intermediate_files <- TRUE
 
 dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(figures_dir, recursive = TRUE, showWarnings = FALSE)
+
+gold_macro_data <- read_csv(
+  file.path(processed_dir, "gold_macro_data.csv"),
+  show_col_types = FALSE
+)
+
+train_data <- read_csv(
+  file.path(processed_dir, "train_data.csv"),
+  show_col_types = FALSE
+)
 
 baseline_metrics <- read_csv(
   file.path(processed_dir, "baseline_metrics.csv"),
@@ -77,6 +88,46 @@ holdout_data <- read_csv(
   show_col_types = FALSE
 )
 
+predictors <- c(
+  "usd_broad_index_lag1",
+  "sp500_index_lag1",
+  "wti_price_lag1",
+  "treasury_10y_yield_lag1"
+)
+
+make_summary_table <- function(df, sample_name) {
+  numeric_names <- setdiff(names(df), "date")
+
+  bind_rows(lapply(numeric_names, function(var_name) {
+    values <- df[[var_name]]
+
+    tibble(
+      sample = sample_name,
+      variable = var_name,
+      n = length(values),
+      mean = mean(values),
+      sd = sd(values),
+      min = min(values),
+      q1 = unname(quantile(values, 0.25)),
+      median = median(values),
+      q3 = unname(quantile(values, 0.75)),
+      max = max(values)
+    )
+  }))
+}
+
+make_time_plot <- function(df, columns, title, split_date, color, ncol = 1) {
+  df |>
+    select(date, all_of(columns)) |>
+    pivot_longer(-date, names_to = "series", values_to = "value") |>
+    ggplot(aes(x = date, y = value)) +
+    geom_line(color = color, linewidth = 0.4) +
+    geom_vline(xintercept = split_date, linetype = "dashed", color = "firebrick") +
+    facet_wrap(~series, ncol = ncol, scales = "free_y") +
+    labs(title = title, x = "Date", y = NULL) +
+    theme_minimal()
+}
+
 model_label <- function(model) {
   case_when(
     model == "mean" ~ "Mean benchmark",
@@ -114,6 +165,95 @@ format_pvalue <- function(x) {
 round_report_table <- function(df, digits = 3) {
   df |>
     mutate(across(where(is.numeric), ~ round(.x, digits)))
+}
+
+split_date <- max(train_data$date)
+
+final_variable_summary <- bind_rows(
+  make_summary_table(gold_macro_data, "full"),
+  make_summary_table(train_data, "train"),
+  make_summary_table(holdout_data, "holdout")
+) |>
+  round_report_table()
+
+write_csv(
+  final_variable_summary,
+  file.path(processed_dir, "final_variable_summary.csv")
+)
+
+final_gold_series_plot <- make_time_plot(
+  gold_macro_data,
+  c("gold_close", "gold_log_return"),
+  "Gold Series with Train-Holdout Split",
+  split_date,
+  "steelblue"
+)
+
+show_and_save_plot(
+  final_gold_series_plot,
+  file.path(figures_dir, "final_gold_series_split.png"),
+  width = 9,
+  height = 7
+)
+
+final_macro_plot <- make_time_plot(
+  gold_macro_data,
+  predictors,
+  "Lagged Macro-Financial Predictors",
+  split_date,
+  "darkgreen"
+)
+
+show_and_save_plot(
+  final_macro_plot,
+  file.path(figures_dir, "final_macro_predictors_split.png"),
+  width = 9,
+  height = 9
+)
+
+seasonality_data <- train_data |>
+  mutate(
+    weekday = factor(
+      weekdays(date, abbreviate = TRUE),
+      levels = c("Mon", "Tue", "Wed", "Thu", "Fri")
+    )
+  )
+
+final_weekday_plot <- ggplot(seasonality_data, aes(x = weekday, y = gold_log_return)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7, outlier.alpha = 0.2) +
+  labs(
+    title = "Gold Log Return by Weekday (Training Set)",
+    x = NULL,
+    y = "Gold log return"
+  ) +
+  theme_minimal()
+
+show_and_save_plot(
+  final_weekday_plot,
+  file.path(figures_dir, "final_weekday_seasonality.png"),
+  width = 8,
+  height = 5
+)
+
+png(
+  filename = file.path(figures_dir, "final_gold_acf_pacf.png"),
+  width = 1200,
+  height = 1200,
+  res = 150
+)
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
+pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
+acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
+pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
+dev.off()
+
+if (interactive()) {
+  par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+  acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
+  pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
+  acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
+  pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
 }
 
 baseline_all_metrics <- baseline_metrics |>
@@ -425,11 +565,8 @@ write_csv(
   selection_summary,
   file.path(processed_dir, "final_selection_summary.csv")
 )
-write_csv(
-  final_shortlist_forecasts,
-  file.path(processed_dir, "final_shortlist_forecasts.csv")
-)
 
+print_section("Final variable summary", final_variable_summary, n = nrow(final_variable_summary))
 print_section("Final holdout ranking", holdout_ranking_report, n = nrow(holdout_ranking_report))
 print_section("Final class winners", class_winners_report, n = nrow(class_winners_report))
 print_section(
@@ -596,12 +733,46 @@ show_and_save_plot(
   height = 6
 )
 
+if (cleanup_intermediate_files) {
+  intermediate_csvs <- file.path(
+    processed_dir,
+    c(
+      "baseline_metrics.csv",
+      "baseline_residual_diagnostics.csv",
+      "baseline_holdout_forecasts.csv",
+      "eda_summary_stats.csv",
+      "train_correlations.csv",
+      "ets_metrics.csv",
+      "ets_residual_diagnostics.csv",
+      "ets_holdout_forecasts.csv",
+      "ets_vs_baseline.csv",
+      "arima_stationarity_summary.csv",
+      "arima_candidate_models.csv",
+      "arima_metrics.csv",
+      "arima_residual_diagnostics.csv",
+      "arima_holdout_forecasts.csv",
+      "arima_vs_existing.csv",
+      "arimax_feature_screening.csv",
+      "arimax_candidate_models.csv",
+      "arimax_coefficients.csv",
+      "arimax_metrics.csv",
+      "arimax_residual_diagnostics.csv",
+      "arimax_holdout_forecasts.csv",
+      "arimax_vs_existing.csv",
+      "final_shortlist_forecasts.csv"
+    )
+  )
+
+  unlink(intermediate_csvs[file.exists(intermediate_csvs)])
+}
+
 message(
+  "\nSaved final variable summary to ", file.path(processed_dir, "final_variable_summary.csv"),
   "\nSaved final model ranking to ", file.path(processed_dir, "final_model_ranking_holdout.csv"),
   "\nSaved final class winners to ", file.path(processed_dir, "final_class_winners.csv"),
   "\nSaved winner generalization summary to ", file.path(processed_dir, "final_winner_generalization_summary.csv"),
   "\nSaved winner residual diagnostics to ", file.path(processed_dir, "final_winner_residual_diagnostics.csv"),
   "\nSaved final selection summary to ", file.path(processed_dir, "final_selection_summary.csv"),
-  "\nSaved final shortlist forecasts to ", file.path(processed_dir, "final_shortlist_forecasts.csv"),
-  "\nSaved report-ready plots to ", figures_dir
+  "\nSaved report-ready plots to ", figures_dir,
+  "\nRemoved redundant intermediate CSVs: ", cleanup_intermediate_files
 )

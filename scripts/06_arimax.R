@@ -188,10 +188,7 @@ screening_plot <- feature_screening |>
   theme_minimal()
 
 show_and_save_plot(
-  screening_plot,
-  file.path(figures_dir, "arimax_feature_screening.png"),
-  width = 9,
-  height = 6
+  screening_plot
 )
 
 train_y <- train_model_data$gold_close
@@ -403,9 +400,6 @@ arimax_vs_existing_display <- arimax_vs_existing |>
     )
   )
 
-write_csv(feature_screening, file.path(processed_dir, "arimax_feature_screening.csv"))
-write_csv(candidate_specs, file.path(processed_dir, "arimax_candidate_models.csv"))
-write_csv(coefficient_table, file.path(processed_dir, "arimax_coefficients.csv"))
 write_csv(arimax_metrics, file.path(processed_dir, "arimax_metrics.csv"))
 write_csv(
   arimax_residual_diagnostics,
@@ -414,10 +408,6 @@ write_csv(
 write_csv(
   arimax_holdout_forecasts,
   file.path(processed_dir, "arimax_holdout_forecasts.csv")
-)
-write_csv(
-  arimax_vs_existing,
-  file.path(processed_dir, "arimax_vs_existing.csv")
 )
 
 print_section("ARIMAX candidate models", candidate_specs, n = nrow(candidate_specs))
@@ -454,10 +444,7 @@ arimax_plot <- ggplot(arimax_plot_data, aes(x = date, y = value, color = series)
   theme_minimal()
 
 show_and_save_plot(
-  arimax_plot,
-  file.path(figures_dir, "arimax_holdout_forecasts.png"),
-  width = 10,
-  height = 6
+  arimax_plot
 )
 
 best_arimax_model <- holdout_metrics |>
@@ -486,10 +473,7 @@ best_arimax_plot <- ggplot(best_arimax_holdout, aes(x = date, y = point_forecast
   theme_minimal()
 
 show_and_save_plot(
-  best_arimax_plot,
-  file.path(figures_dir, "best_arimax_prediction_intervals.png"),
-  width = 10,
-  height = 6
+  best_arimax_plot
 )
 
 if (interactive()) {
@@ -502,12 +486,8 @@ if (interactive()) {
 message(
   "\nBest dynamic regression model on holdout RMSE: ", best_arimax_model,
   " (", best_arimax_method, ")",
-  "\nSaved feature screening to ", file.path(processed_dir, "arimax_feature_screening.csv"),
-  "\nSaved candidate models to ", file.path(processed_dir, "arimax_candidate_models.csv"),
-  "\nSaved coefficient table to ", file.path(processed_dir, "arimax_coefficients.csv"),
   "\nSaved metrics to ", file.path(processed_dir, "arimax_metrics.csv"),
   "\nSaved residual diagnostics to ", file.path(processed_dir, "arimax_residual_diagnostics.csv"),
   "\nSaved holdout forecasts to ", file.path(processed_dir, "arimax_holdout_forecasts.csv"),
-  "\nSaved comparison table to ", file.path(processed_dir, "arimax_vs_existing.csv"),
-  "\nSaved plots to ", figures_dir
+  "\nARIMAX screening plots and diagnostics are shown interactively; final report-ready plots are saved in scripts/07_compare_models.R"
 )

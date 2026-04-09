@@ -1,0 +1,5 @@
+criterion,winner,value
+Lowest holdout RMSE overall,Naive,58.727
+Lowest holdout RMSE among non-baselines,ARIMAX market core (lag 1),58.745
+Best 80% interval coverage among finalists,"ETS(M,N,N)",0.699
+Best 95% interval coverage among finalists,"ETS(M,N,N)",0.865

@@ -1,0 +1,5 @@
+model_class,display_label,method,residual_mean,residual_sd,residual_acf1,ljung_box_pvalue
+Baseline,Naive,Naive benchmark,0.534,15.141,-0.017,0.028
+ETS,"ETS(M,N,N)","ETS(M,N,N)",0,0.009,-0.001,0.089
+ARIMA,"ARIMA(1,1,1) + drift","ARIMA(1,1,1) with drift",0.001,15.135,-0,0.012
+ARIMAX,ARIMAX market core (lag 1),"Regression with ARIMA(2,1,2) errors",-0.027,15.054,-0.004,<0.001

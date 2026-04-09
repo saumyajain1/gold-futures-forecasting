@@ -1,0 +1,5 @@
+model_class,display_label,method,rmse_train,rmse_holdout,rmse_gap,coverage80,coverage95,avg_width80,avg_width95
+Baseline,Naive,Naive benchmark,15.146,58.727,43.58,0.502,0.661,47.086,72.011
+ETS,"ETS(M,N,N)","ETS(M,N,N)",15.141,58.75,43.608,0.699,0.865,79.044,120.888
+ARIMA,"ARIMA(1,1,1) + drift","ARIMA(1,1,1) with drift",15.131,58.972,43.84,0.504,0.663,47.006,71.89
+ARIMAX,ARIMAX market core (lag 1),"Regression with ARIMA(2,1,2) errors",15.05,58.745,43.694,0.446,0.618,38.663,59.129

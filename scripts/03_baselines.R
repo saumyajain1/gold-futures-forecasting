@@ -215,5 +215,5 @@ message(
   "\nSaved metrics to ", file.path(processed_dir, "baseline_metrics.csv"),
   "\nSaved residual diagnostics to ", file.path(processed_dir, "baseline_residual_diagnostics.csv"),
   "\nSaved holdout forecasts to ", file.path(processed_dir, "baseline_holdout_forecasts.csv"),
-  "\nSaved plots to ", figures_dir
+  "\nSaved baseline plots to ", figures_dir
 )

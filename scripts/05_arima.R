@@ -269,8 +269,6 @@ arima_vs_existing_display <- arima_vs_existing |>
     )
   )
 
-write_csv(stationarity_summary, file.path(processed_dir, "arima_stationarity_summary.csv"))
-write_csv(candidate_specs, file.path(processed_dir, "arima_candidate_models.csv"))
 write_csv(arima_metrics, file.path(processed_dir, "arima_metrics.csv"))
 write_csv(
   arima_residual_diagnostics,
@@ -280,11 +278,6 @@ write_csv(
   arima_holdout_forecasts,
   file.path(processed_dir, "arima_holdout_forecasts.csv")
 )
-write_csv(
-  arima_vs_existing,
-  file.path(processed_dir, "arima_vs_existing.csv")
-)
-
 print_section("ARIMA metrics", arima_metrics_display, n = nrow(arima_metrics_display))
 print_section(
   "ARIMA residual diagnostics",
@@ -387,11 +380,8 @@ if (interactive()) {
 message(
   "\nBest ARIMA model on holdout RMSE: ", best_arima_model,
   " (", best_arima_method, ")",
-  "\nSaved stationarity summary to ", file.path(processed_dir, "arima_stationarity_summary.csv"),
-  "\nSaved candidate models to ", file.path(processed_dir, "arima_candidate_models.csv"),
   "\nSaved metrics to ", file.path(processed_dir, "arima_metrics.csv"),
   "\nSaved residual diagnostics to ", file.path(processed_dir, "arima_residual_diagnostics.csv"),
   "\nSaved holdout forecasts to ", file.path(processed_dir, "arima_holdout_forecasts.csv"),
-  "\nSaved ARIMA comparison table to ", file.path(processed_dir, "arima_vs_existing.csv"),
-  "\nSaved plots to ", figures_dir
+  "\nSaved ARIMA plots to ", figures_dir
 )

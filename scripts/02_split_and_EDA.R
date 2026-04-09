@@ -78,16 +78,9 @@ summary_stats <- bind_rows(
   make_summary_table(holdout_data, "holdout")
 )
 
-write_csv(summary_stats, file.path(processed_dir, "eda_summary_stats.csv"))
-
 train_correlations <- train_data |>
   select(-date) |>
   cor()
-
-write_csv(
-  as.data.frame(train_correlations) |> tibble::rownames_to_column("variable"),
-  file.path(processed_dir, "train_correlations.csv")
-)
 
 yearly_summary <- data |>
   mutate(year = format(date, "%Y")) |>
@@ -276,11 +269,24 @@ pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)"
 dev.off()
 
 if (interactive()) {
-  par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
-  acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
-  pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
-  acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
-  pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par), add = TRUE)
+
+  tryCatch(
+    {
+      par(mfrow = c(2, 2), mar = c(3, 3, 2, 1))
+      acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
+      pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
+      acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
+      pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
+    },
+    error = function(e) {
+      message(
+        "Skipping interactive ACF/PACF panel because the plot pane is too small. ",
+        "Resize the Plots pane and rerun if you want to see it."
+      )
+    }
+  )
 }
 
 message(
@@ -291,5 +297,5 @@ message(
   "\nTraining dates: ", min(train_data$date), " to ", max(train_data$date),
   "\nHoldout dates: ", min(holdout_data$date), " to ", max(holdout_data$date),
   "\nSplit date: ", split_date,
-  "\nSaved figures to ", figures_dir
+  "\nSaved main EDA figures to ", figures_dir
 )

@@ -178,10 +178,6 @@ write_csv(
   ets_holdout_forecasts,
   file.path(processed_dir, "ets_holdout_forecasts.csv")
 )
-write_csv(
-  ets_vs_baseline,
-  file.path(processed_dir, "ets_vs_baseline.csv")
-)
 
 print_section("ETS metrics", ets_metrics_display, n = nrow(ets_metrics_display))
 print_section(
@@ -272,6 +268,5 @@ message(
   "\nSaved metrics to ", file.path(processed_dir, "ets_metrics.csv"),
   "\nSaved residual diagnostics to ", file.path(processed_dir, "ets_residual_diagnostics.csv"),
   "\nSaved holdout forecasts to ", file.path(processed_dir, "ets_holdout_forecasts.csv"),
-  "\nSaved ETS vs baseline comparison to ", file.path(processed_dir, "ets_vs_baseline.csv"),
-  "\nSaved plots to ", figures_dir
+  "\nSaved ETS plots to ", figures_dir
 )

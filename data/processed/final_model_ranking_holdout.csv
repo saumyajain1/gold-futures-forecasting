@@ -1,0 +1,15 @@
+rank,model_class_label,display_label,method,rmse,rmse_diff_from_naive,coverage80,coverage95,avg_width80,avg_width95,aicc
+1,Baseline,Naive,Naive benchmark,58.727,0,0.502,0.661,47.086,72.011,NA
+2,ARIMAX,ARIMAX market core (lag 1),"Regression with ARIMA(2,1,2) errors",58.745,0.018,0.446,0.618,38.663,59.129,16557.133
+3,ETS,"ETS(M,N,N)","ETS(M,N,N)",58.75,0.023,0.699,0.865,79.044,120.888,25917.34
+4,ETS,SES,Simple exponential smoothing,58.81,0.083,0.494,0.659,47.067,71.983,26189.709
+5,ARIMAX,ARIMAX screened top 4,"Regression with ARIMA(2,1,2) errors",58.813,0.086,0.428,0.606,38.5,58.88,16541.18
+6,ARIMAX,ARIMAX screened top 3,"Regression with ARIMA(2,1,2) errors",58.924,0.198,0.432,0.61,38.537,58.937,16544.039
+7,ETS,Holt,Holt's method,58.928,0.201,0.504,0.671,47.01,71.896,26192.032
+8,ARIMAX,ARIMAX screened top 2,"Regression with ARIMA(2,1,2) errors",58.942,0.215,0.436,0.61,38.533,58.93,16542.539
+9,ARIMA,"ARIMA(1,1,1) + drift","ARIMA(1,1,1) with drift",58.972,0.245,0.504,0.663,47.006,71.89,16609.689
+10,ETS,Damped Holt,Damped Holt's method,59.1,0.374,0.494,0.663,47.091,72.02,26196.438
+11,ARIMA,"ARIMA(1,1,2) + drift","ARIMA(1,1,2) with drift",59.322,0.595,0.502,0.667,46.995,71.872,16611.679
+12,ARIMA,"ARIMA(2,1,1) + drift","ARIMA(2,1,1) with drift",59.385,0.658,0.5,0.667,46.995,71.873,16611.686
+13,ARIMA,"ARIMA(2,1,2) + drift","ARIMA(2,1,2) with drift",59.401,0.675,0.5,0.661,46.976,71.843,16613.223
+14,Baseline,Mean benchmark,Mean benchmark,1725.257,1666.53,0,0,1202.882,1840.091,NA
