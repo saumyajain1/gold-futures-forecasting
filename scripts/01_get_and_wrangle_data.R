@@ -1,16 +1,8 @@
-if (file.exists("scripts/utils.R")) {
-  source("scripts/utils.R")
-} else {
-  source("utils.R")
-}
+source(if (file.exists("scripts/utils.R")) "scripts/utils.R" else "utils.R")
 
-project_root <- setup_project(c("quantmod", "dplyr", "readr", "tidyr"))
-
-raw_dir <- file.path(project_root, "data", "raw")
-processed_dir <- file.path(project_root, "data", "processed")
-
-dir.create(raw_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
+paths <- setup_analysis(c("quantmod", "dplyr", "readr", "tidyr"), create_raw_dir = TRUE)
+raw_dir <- paths$raw_dir
+processed_dir <- paths$processed_dir
 
 download_fred <- function(series_id, file_name, column_name) {
   url <- paste0("https://fred.stlouisfed.org/graph/fredgraph.csv?id=", series_id)

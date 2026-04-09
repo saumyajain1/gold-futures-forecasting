@@ -1,13 +1,8 @@
-if (file.exists("scripts/utils.R")) {
-  source("scripts/utils.R")
-} else {
-  source("utils.R")
-}
+source(if (file.exists("scripts/utils.R")) "scripts/utils.R" else "utils.R")
 
-project_root <- setup_project(c("readr", "dplyr", "tidyr", "ggplot2"))
-
-processed_dir <- file.path(project_root, "data", "processed")
-figures_dir <- file.path(project_root, "figures")
+paths <- setup_analysis(c("readr", "dplyr", "tidyr", "ggplot2"))
+processed_dir <- paths$processed_dir
+figures_dir <- paths$figures_dir
 predictors <- c(
   "usd_broad_index_lag1",
   "sp500_index_lag1",
@@ -15,13 +10,7 @@ predictors <- c(
   "treasury_10y_yield_lag1"
 )
 
-dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(figures_dir, recursive = TRUE, showWarnings = FALSE)
-
-data <- read_csv(
-  file.path(processed_dir, "gold_macro_data.csv"),
-  show_col_types = FALSE
-)
+data <- read_processed(processed_dir, "gold_macro_data.csv")
 
 split_index <- floor(0.8 * nrow(data))
 split_date <- data$date[split_index]
@@ -38,39 +27,6 @@ split_summary <- tibble(
   start_date = c(min(data$date), min(train_data$date), min(holdout_data$date)),
   end_date = c(max(data$date), max(train_data$date), max(holdout_data$date))
 )
-
-make_summary_table <- function(df, sample_name) {
-  numeric_names <- setdiff(names(df), "date")
-
-  bind_rows(lapply(numeric_names, function(var_name) {
-    values <- df[[var_name]]
-
-    tibble(
-      sample = sample_name,
-      variable = var_name,
-      n = length(values),
-      mean = mean(values),
-      sd = sd(values),
-      min = min(values),
-      q1 = unname(quantile(values, 0.25)),
-      median = median(values),
-      q3 = unname(quantile(values, 0.75)),
-      max = max(values)
-    )
-  }))
-}
-
-make_time_plot <- function(df, columns, title, color, ncol = 1) {
-  df |>
-    select(date, all_of(columns)) |>
-    pivot_longer(-date, names_to = "series", values_to = "value") |>
-    ggplot(aes(x = date, y = value)) +
-    geom_line(color = color, linewidth = 0.4) +
-    geom_vline(xintercept = split_date, linetype = "dashed", color = "firebrick") +
-    facet_wrap(~series, ncol = ncol, scales = "free_y") +
-    labs(title = title, x = "Date", y = NULL) +
-    theme_minimal()
-}
 
 summary_stats <- bind_rows(
   make_summary_table(data, "full"),
@@ -143,6 +99,7 @@ gold_plot <- make_time_plot(
   data,
   c("gold_close", "gold_log_return"),
   "Gold Series with Train-Holdout Split",
+  split_date,
   "steelblue"
 )
 
@@ -157,6 +114,7 @@ predictor_plot <- make_time_plot(
   data,
   predictors,
   "Lagged Macro-Financial Predictors",
+  split_date,
   "darkgreen"
 )
 
@@ -166,25 +124,6 @@ show_and_save_plot(
   width = 9,
   height = 9
 )
-
-distribution_plot_data <- bind_rows(
-  train_data |> mutate(sample = "train"),
-  holdout_data |> mutate(sample = "holdout")
-) |>
-  select(sample, gold_close, gold_log_return) |>
-  pivot_longer(-sample, names_to = "series", values_to = "value")
-
-distribution_plot <- ggplot(distribution_plot_data, aes(x = value, fill = sample)) +
-  geom_histogram(bins = 40, alpha = 0.6, position = "identity") +
-  facet_wrap(~series, scales = "free", ncol = 1) +
-  labs(
-    title = "Distributions of Gold Price and Gold Log Return",
-    x = NULL,
-    y = "Count"
-  ) +
-  theme_minimal()
-
-show_and_save_plot(distribution_plot)
 
 weekday_plot <- ggplot(seasonality_data, aes(x = weekday, y = gold_log_return)) +
   geom_boxplot(fill = "steelblue", alpha = 0.7, outlier.alpha = 0.2) +
@@ -201,34 +140,6 @@ show_and_save_plot(
   width = 8,
   height = 5
 )
-
-month_plot <- ggplot(seasonality_data, aes(x = month, y = gold_log_return)) +
-  geom_boxplot(fill = "darkgreen", alpha = 0.7, outlier.alpha = 0.2) +
-  labs(
-    title = "Gold Log Return by Month (Training Set)",
-    x = NULL,
-    y = "Gold log return"
-  ) +
-  theme_minimal()
-
-show_and_save_plot(month_plot)
-
-scatter_plot_data <- train_data |>
-  select(gold_log_return, all_of(predictors)) |>
-  pivot_longer(-gold_log_return, names_to = "predictor", values_to = "value")
-
-scatter_plot <- ggplot(scatter_plot_data, aes(x = value, y = gold_log_return)) +
-  geom_point(alpha = 0.25, size = 0.7, color = "steelblue") +
-  geom_smooth(method = "lm", se = FALSE, color = "firebrick", linewidth = 0.5) +
-  facet_wrap(~predictor, scales = "free_x") +
-  labs(
-    title = "Gold Log Return vs Lagged Predictors (Training Set)",
-    x = NULL,
-    y = "Gold log return"
-  ) +
-  theme_minimal()
-
-show_and_save_plot(scatter_plot)
 
 correlation_plot_data <- as.data.frame(as.table(train_correlations))
 
@@ -255,39 +166,27 @@ show_and_save_plot(
   height = 6
 )
 
-png(
-  filename = file.path(figures_dir, "gold_acf_pacf_plots.png"),
-  width = 1200,
-  height = 1200,
-  res = 150
+save_base_plot(
+  file.path(figures_dir, "gold_acf_pacf_plots.png"),
+  code = {
+    par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+    acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
+    pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
+    acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
+    pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
+  }
 )
-par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
-acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
-pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
-acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
-pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
-dev.off()
 
-if (interactive()) {
-  old_par <- par(no.readonly = TRUE)
-  on.exit(par(old_par), add = TRUE)
-
-  tryCatch(
-    {
-      par(mfrow = c(2, 2), mar = c(3, 3, 2, 1))
-      acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
-      pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
-      acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
-      pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
-    },
-    error = function(e) {
-      message(
-        "Skipping interactive ACF/PACF panel because the plot pane is too small. ",
-        "Resize the Plots pane and rerun if you want to see it."
-      )
-    }
-  )
-}
+show_base_plot(
+  {
+    par(mfrow = c(2, 2), mar = c(3, 3, 2, 1))
+    acf(train_data$gold_close, main = "ACF of Gold Close (Training Set)")
+    pacf(train_data$gold_close, main = "PACF of Gold Close (Training Set)")
+    acf(train_data$gold_log_return, main = "ACF of Gold Log Return (Training Set)")
+    pacf(train_data$gold_log_return, main = "PACF of Gold Log Return (Training Set)")
+  },
+  "Skipping interactive ACF/PACF panel because the plot pane is too small. Resize the Plots pane and rerun if needed."
+)
 
 message(
   "Saved split files to ", processed_dir,
