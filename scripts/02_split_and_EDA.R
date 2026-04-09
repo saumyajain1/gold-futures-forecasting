@@ -103,6 +103,35 @@ yearly_summary <- data |>
     .groups = "drop"
   )
 
+seasonality_data <- train_data |>
+  mutate(
+    weekday = factor(
+      weekdays(date, abbreviate = TRUE),
+      levels = c("Mon", "Tue", "Wed", "Thu", "Fri")
+    ),
+    month = factor(format(date, "%b"), levels = month.abb)
+  )
+
+weekday_summary <- seasonality_data |>
+  group_by(weekday) |>
+  summarise(
+    days = n(),
+    mean_gold_close = mean(gold_close),
+    mean_log_return = mean(gold_log_return),
+    sd_log_return = sd(gold_log_return),
+    .groups = "drop"
+  )
+
+month_summary <- seasonality_data |>
+  group_by(month) |>
+  summarise(
+    days = n(),
+    mean_gold_close = mean(gold_close),
+    mean_log_return = mean(gold_log_return),
+    sd_log_return = sd(gold_log_return),
+    .groups = "drop"
+  )
+
 target_correlations <- tibble(
   predictor = predictors,
   corr_with_gold_close = train_correlations["gold_close", predictors],
@@ -112,6 +141,8 @@ target_correlations <- tibble(
 print_section("Split summary", split_summary)
 print_section("Summary statistics", summary_stats, n = nrow(summary_stats))
 print_section("Yearly gold summary", yearly_summary, n = nrow(yearly_summary))
+print_section("Weekday seasonality summary", weekday_summary, n = nrow(weekday_summary))
+print_section("Month-of-year seasonality summary", month_summary, n = nrow(month_summary))
 print_section("Training-set correlation matrix", round(train_correlations, 3))
 print_section("Target vs predictor correlations", target_correlations)
 
@@ -161,6 +192,33 @@ distribution_plot <- ggplot(distribution_plot_data, aes(x = value, fill = sample
   theme_minimal()
 
 show_and_save_plot(distribution_plot)
+
+weekday_plot <- ggplot(seasonality_data, aes(x = weekday, y = gold_log_return)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7, outlier.alpha = 0.2) +
+  labs(
+    title = "Gold Log Return by Weekday (Training Set)",
+    x = NULL,
+    y = "Gold log return"
+  ) +
+  theme_minimal()
+
+show_and_save_plot(
+  weekday_plot,
+  file.path(figures_dir, "weekday_seasonality.png"),
+  width = 8,
+  height = 5
+)
+
+month_plot <- ggplot(seasonality_data, aes(x = month, y = gold_log_return)) +
+  geom_boxplot(fill = "darkgreen", alpha = 0.7, outlier.alpha = 0.2) +
+  labs(
+    title = "Gold Log Return by Month (Training Set)",
+    x = NULL,
+    y = "Gold log return"
+  ) +
+  theme_minimal()
+
+show_and_save_plot(month_plot)
 
 scatter_plot_data <- train_data |>
   select(gold_log_return, all_of(predictors)) |>
