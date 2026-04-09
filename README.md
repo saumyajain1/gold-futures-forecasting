@@ -16,7 +16,7 @@
 
 ## 1. Motivation & Problem
 
-Gold holds a unique position in global finance—often acting as a currency hedge, a safe-haven asset, and an inflation hedge. Classical forecasting models historically rely purely on the intrinsic temporal dynamics of gold prices. However, in highly integrated global markets, gold prices are heavily influenced by broader macroeconomic conditions. 
+Gold holds a unique position in global finance, often acting as a currency hedge, a safe-haven asset, and an inflation hedge. Classical forecasting models historically rely purely on the intrinsic temporal dynamics of gold prices. However, in highly integrated global markets, gold prices are heavily influenced by broader macroeconomic conditions. 
 
 This project sets out to build a robust, reproducible analytical pipeline to forecast **daily gold futures prices (GC=F)**. By comparing pure univariate modeling against multivariate systems, we aim to answer:
 
