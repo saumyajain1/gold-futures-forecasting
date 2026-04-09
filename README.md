@@ -1,52 +1,200 @@
-# Project Proposal: Forecasting Daily Gold Futures Prices
+# Project Proposal — Forecasting Daily Gold Futures Prices
 
-## 1. Executive Summary
-This project proposes a robust, reproducible analytical pipeline to forecast daily gold futures prices (GC=F) using classical univariate time-series models and multivariate modeling supplemented with systemic macro-financial indicators. 
+---
 
-Gold holds a unique position in global finance—often acting as a currency hedge, a safe-haven asset, and an inflation hedge. The objective of this analysis is to evaluate whether systemic asset class correlations (equities, bond yields, oil, and fiat currencies) provide meaningful predictive lift for gold prices over pure univariate historical autoregression.
+## Table of Contents
 
-## 2. Data Acquisition & Exogenous Variables
-The modeling framework uses daily gold futures closing prices alongside a curated set of macroeconomic and systemic financial predictors.
+1. [Motivation & Problem](#1-motivation--problem)
+2. [Data](#2-data)
+3. [Models and Evaluation Metrics](#3-models-and-evaluation-metrics)
+4. [Implementation Plan](#4-implementation-plan)
+5. [Repository Structure](#5-repository-structure)
+6. [Getting Started — Setup](#6-getting-started--setup)
+7. [Contributing via Pull Requests](#7-contributing-via-pull-requests)
 
-### 2.1 Target Variable
-* **Gold Futures (GC=F)**: Sourced via Yahoo Finance. This serves as our prediction target representing the immediate market sentiment and pricing of gold.
+---
 
-### 2.2 Macro-Financial Predictors
-We utilize four core exogenous variables sourced from the St. Louis Federal Reserve (FRED) to capture broader market conditions.
-1. **Trade Weighted U.S. Dollar Index (DTWEXBGS)**: Gold is globally priced in U.S. Dollars. An appreciating dollar intuitively makes gold more expensive in other currencies, historically enforcing a strong inverse relationship.
-2. **S&P 500 Index (SP500)**: Serves as a primary proxy for global risk appetite and stock market performance. Gold often experiences heightened demand as a "safe haven" during equity market distressed periods.
-3. **WTI Crude Oil Prices (DCOILWTICO)**: Acts as a dual proxy for broad commodity market strength and global inflation expectations. Gold is traditionally utilized as an inflation hedge.
-4. **10-Year Treasury Constant Maturity Rate (DGS10)**: Represents the "risk-free" real yield over time. Because physical gold yields no interest or dividend, rising treasury yields increase the opportunity cost of holding gold, typically placing downward pressure on gold prices.
+## 1. Motivation & Problem
 
-## 3. Data Preprocessing & Exploratory Analysis
-Financial data is intrinsically noisy and subject to structural breaks and varying holiday schedules across asset classes. Our pipeline enforces strict preprocessing regimens.
+Gold holds a unique position in global finance—often acting as a currency hedge, a safe-haven asset, and an inflation hedge. Classical forecasting models historically rely purely on the intrinsic temporal dynamics of gold prices. However, in highly integrated global markets, gold prices are heavily influenced by broader macroeconomic conditions. 
 
-* **Date Alignment & Imputation**: Merging asset datasets frequently introduces NA values due to mismatched market holidays. We utilize forward-fill imputation to resolve these gaps, maintaining chronological integrity based on the assumption that the most recently traded price represents current market consensus in the absence of a new session.
-* **Lagging Mechanism**: To accurately represent a predictive operational environment, all independent macroeconomic variables are lagged by exactly 1 day. A forecast for time $t$ can strictly only utilize data available up to time $t-1$.
-* **Train / Holdout Splitting**: Time-series models are heavily prone to overfitting random walks. We perform a strict chronological sequence split, keeping a concluding holdout subset entirely "unseen" during model training. Exploratory Data Analysis (EDA)—including ACF/PACF autocorrelation checks and seasonality evaluations—is performed strictly on the training set to prevent data leakage.
+This project sets out to build a robust, reproducible analytical pipeline to forecast **daily gold futures prices (GC=F)**. By comparing pure univariate modeling against multivariate systems, we aim to answer:
 
-## 4. Modeling Methodology
-Financial markets are highly efficient. Hence, any proposed model must prove structural superiority over simple rules of thumb. 
+1. Does the inclusion of systemic asset class correlations (equities, bond yields, oil, and the US dollar) provide meaningful predictive lift over pure univariate historical autoregression?
+2. Are macroeconomic indicators effective in creating more accurate forecasting confidence intervals during unseen holdout periods?
+3. Can complex state-space and integrated models strictly beat random walk baselines in an efficient financial market?
 
-### 4.1 Benchmark Models
-Before employing complex models, we establish lower-bound performance using baselines:
-* **Mean Benchmark**: Forecasts future values as the historical mean.
-* **Naïve Benchmark (Random Walk)**: Assumes that the best prediction of tomorrow's price is today's price. Financial assets often resemble random walks, making this a notoriously difficult baseline to definitively beat.
+---
 
-### 4.2 Univariate Time-Series Models
-We deploy standard internal-memory models that rely solely on historical gold price dynamics:
-* **ETS (Exponential Smoothing State Space)**: Deconstructs the timeline into Error, Trend, and Seasonal components. It provides excellent responsive predictions based on recent trajectory-level exponential decay weights.
-* **ARIMA (AutoRegressive Integrated Moving Average)**: Standardizes non-stationary prices via differencing, and maps predictions using lagged autoregressive terms (AR) and residual moving averages (MA).
+## 2. Data
 
-### 4.3 Multivariate Time-Series Models
-* **ARIMAX**: We extend our optimal ARIMA topologies to include our preprocessed macro-financial indicators as exogenous regressors ($X$). This tests the central hypothesis: Does feeding the model the lagged state of the Dollar, Equities, Oil, and Yields structurally improve our forecasting accuracy or error intervals?
+All data are sourced from **Yahoo Finance** and the **St. Louis Federal Reserve (FRED)**, harmonized to a **daily frequency**.
 
-## 5. Evaluation & Diagnostics
-We evaluate each model using stringent, robust financial data science principles.
+| Variable | Source / Ticker | Description |
+|---|---|---|
+| **Gold Futures (Target)** | [Yahoo Finance (GC=F)](https://finance.yahoo.com/quote/GC=F) | Target variable representing immediate market sentiment |
+| **U.S. Dollar Index** | [FRED (DTWEXBGS)](https://fred.stlouisfed.org/series/DTWEXBGS) | Measures dollar strength; gold is priced globally in USD |
+| **S&P 500 Index** | [FRED (SP500)](https://fred.stlouisfed.org/series/SP500) | Proxy for global risk appetite and stock market performance |
+| **WTI Crude Oil Prices** | [FRED (DCOILWTICO)](https://fred.stlouisfed.org/series/DCOILWTICO) | Proxy for broad commodity market strength and inflation |
+| **10-Year Treasury Yield** | [FRED (DGS10)](https://fred.stlouisfed.org/series/DGS10) | Represents the risk-free real yield and opportunity cost |
 
-* **Root Mean Square Error (RMSE)**: Used to heavily penalize large predictive mistakes on the holdout data points. We evaluate absolute RMSE as well as relatively via its delta against the Naïve Benchmark.
-* **Residual Diagnostics (Ljung-Box Test)**: Performed on the "winning" topologies. If a model has fully extracted the predictive signal from the data, its resulting residuals should structurally resemble white noise.
-* **Prediction Interval Coverage**: Point forecasts in financial markets are structurally fragile. We rigorously test the 80% and 95% predictive interval output topologies to observe empirical coverage on the unseen holdout data. A functionally robust model must maintain confidence intervals that accurately capture the asset's realized volatility without being overly broad.
+**Pre-processing steps:**
 
-## 6. System Architecture (Pipeline Scripts)
-The overarching code infrastructure is fully automated and modular, numbered deliberately for complete chronological reproducibility across seven distinct phases from fetching raw datasets, to fitting models, to rendering final statistical ranking figures and validation curves.
+- **Date Alignment & Imputation**: Forward-fill imputation resolves missing values induced by mismatched market holidays across variables.
+- **Data Lagging**: All independent macroeconomic variables are lagged by exactly 1 day. A forecast for time $t$ can strictly only utilize data available up to time $t-1$.
+- **Data Splitting**: Strict chronological sequence split into training and holdout subsets to prevent data leakage.
+- **EDA & Transformations**: Exploratory data analysis (time-series plots, ACF/PACF) and logarithmic returns conversion for stationarity testing.
+
+---
+
+## 3. Models and Evaluation Metrics
+
+### Benchmark rules
+
+| Rule | Description |
+|---|---|
+| Average forecast | Forecast equals the historical mean of the training data |
+| Naïve forecast (Random Walk) | Forecast equals the most recent observed value ($y_{t \mid t-1} = y_{t-1}$) |
+
+### Candidate models
+
+We fit models from both the purely endogenous and exogenous time-series families:
+
+- **ETS (Exponential Smoothing State Space)**: Deconstructs the timeline into Error, Trend, and Seasonal components based on exponential decay weights.
+- **ARIMA (AutoRegressive Integrated Moving Average)**: Maps predictions using lagged autoregressive terms and residual moving averages.
+- **ARIMAX**: Extends ARIMA to include the lagged macro-financial variables (USD, Equities, Oil, Yields) as exogenous regressors.
+
+### Evaluation Metrics
+
+Forecasts are evaluated on a strictly unseen holdout validation set:
+
+**1. Root Mean Square Error (RMSE):** Used as the primary accuracy metric to heavily penalize large predictive mistakes out-of-sample.
+$$\mathrm{RMSE} = \sqrt{\frac{1}{N}\sum_{i=1}^{N}\!\left(Actual_i - Forecast_i\right)^2}$$
+
+**2. Prediction Interval Coverage:** Point forecasts in financial markets are inherently fragile. We rigorously test the empirical coverage of the **80% and 95% predictive intervals** to ensure the models accurately capture realized volatility.
+
+**3. Residual Diagnostics (Ljung-Box Test):** Assesses whether the model residuals significantly deviate from white noise. A successful model should have extracted all available predictive signal.
+
+---
+
+## 4. Implementation Plan
+
+The project is developed in **R** and **RStudio** with version control managed through **GitHub**.
+
+- All data ingestion, cleaning, modeling, and comparison steps are implemented sequentially as reproducible R scripts (`01` through `07`).
+- Common project operations (plotting themes, directory scaffolding, metric calculations) are centralized in a `utils.R` helper script.
+- The pipeline yields automated final evaluation tables directly out to `data/processed/` and renders stylized forecast plots into the `figures/` directory.
+
+---
+
+## 5. Repository Structure
+
+```text
+gold-futures-forecasting/
+├── data/
+│   ├── raw/               # Downloaded CSVs from FRED/Yahoo (Git ignored)
+│   └── processed/         # Cleaned datasets, fitted metrics, and summaries
+├── figures/               # Output directory for ACF, forecast grids, & error plots
+├── scripts/
+│   ├── 01_get_and_wrangle_data.R
+│   ├── 02_split_and_EDA.R
+│   ├── 03_baselines.R
+│   ├── 04_ets.R
+│   ├── 05_arima.R
+│   ├── 06_arimax.R
+│   ├── 07_compare_models.R
+│   └── utils.R            # Utility functions for scaffolding and analysis
+├── gold-futures-forecasting.Rproj
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 6. Getting Started — Setup
+
+This repository contains built-in environment checking to ensure you have the required analytical R packages cleanly installed.
+
+### Prerequisites
+
+- R ≥ 4.1.0
+- RStudio (recommended for viewing `.Rproj`)
+
+### Steps
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/saumyajain1/gold-futures-forecasting.git
+   cd gold-futures-forecasting
+   ```
+
+2. **Open the project in RStudio**
+
+   Double-click `gold-futures-forecasting.Rproj`.
+
+3. **Run the sequential pipeline**
+
+   The project utilizes a built-in function `setup_project()` defined within `utils.R`. Before executing any scripts, standard dependencies (like `dplyr`, `ggplot2`, `forecast`, etc.) will be gracefully checked and demanded.
+
+   Run the scripts in numerical order starting with `scripts/01_get_and_wrangle_data.R`. This initial script creates the internal `data/` directories and pulls directly from external APIs.
+
+---
+
+## 7. Contributing via Pull Requests
+
+We follow a **feature-branch workflow**. Please do **not** push directly to `main`.
+
+### Workflow
+
+1. **Sync your local `main` with the remote**
+
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. **Create a feature branch**
+
+   Use a descriptive name, e.g.:
+
+   ```bash
+   git checkout -b feature/arimax-volatility-regressors
+   ```
+
+3. **Make your changes**
+
+   - Write clean, well-commented R code.
+   - Keep each commit focused on a single logical change.
+   - If introducing new libraries, be sure to update the `required_packages` vectors located at the top of the relevant numbered pipeline scripts.
+
+4. **Push your branch**
+
+   ```bash
+   git push origin feature/arimax-volatility-regressors
+   ```
+
+5. **Open a Pull Request on GitHub**
+
+   - Navigate to the repository on GitHub and click **"Compare & pull request"**.
+   - Give the PR a clear title and a short description of what was changed and why.
+
+6. **Address review feedback**
+
+   Push additional commits to the same branch; the PR updates automatically.
+
+7. **Merge**
+
+   Once approved, merge using **"Squash and merge"** to keep the history clean, then delete the feature branch.
+
+### Commit message style
+
+```text
+<type>: <short summary>
+
+Optional longer explanation.
+```
+
+Common types: `feat`, `fix`, `data`, `docs`, `refactor`, `test`.
+
+Example: `feat: add GARCH volatility layer to arimax exogenous vectors`
