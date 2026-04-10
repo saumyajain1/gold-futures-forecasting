@@ -47,7 +47,7 @@ To evaluate global market constraints, we fitted multivariate regressions by fee
 
 Determining the topologically superior model relies on strict evaluation architectures. Each model candidate was scored dynamically across the hidden sequence using **moving 1-step ahead forecasts**. The competing methods were evaluated exclusively using their generated **Root Mean Square Error (RMSE)**. 
 
-$$\mathrm{RMSE}_{\text{holdout}} = \sqrt{\frac{1}{N}\sum_{t=T_{train}+1}^{T}\!\left(y_t - \hat{y}_{t \mid T_{train}}\right)^2}$$
+
 
 ---
 
