@@ -1,5 +1,5 @@
 model_class_label,display_label,method,rmse,rmse_diff_from_naive,coverage80,coverage95,avg_width80,avg_width95,aicc
-Baseline,Naive,Naive benchmark,58.727,0,0.502,0.661,47.086,72.011,NA
-ETS,"ETS(M,N,N)","ETS(M,N,N)",58.75,0.023,0.699,0.865,79.044,120.888,25917.34
-ARIMA,"ARIMA(1,1,1) + drift","ARIMA(1,1,1) with drift",58.972,0.245,0.504,0.663,47.006,71.89,16609.689
-ARIMAX,ARIMAX market core (lag 1),"Regression with ARIMA(2,1,2) errors",58.745,0.018,0.446,0.618,38.663,59.129,16557.133
+Baseline,Naive,Naive benchmark,48.844,0,0.601,0.749,44.332,67.8,NA
+ETS,"ETS(M,N,N)","ETS(M,N,N)",48.852,0.008,0.756,0.903,68.325,104.494,22392.944
+ARIMA,"ARIMA(2,1,2) + drift","ARIMA(0,1,0)",48.844,0,0.601,0.749,44.332,67.8,14523.878
+ARIMAX,ARIMAX market core (lag 1),"Regression with ARIMA(0,1,0) errors",48.822,-0.023,0.561,0.718,38.664,59.132,14477.512

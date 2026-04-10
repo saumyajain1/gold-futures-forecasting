@@ -12,7 +12,7 @@ predictors <- c(
 
 data <- read_processed(processed_dir, "gold_macro_data.csv")
 
-split_index <- floor(0.8 * nrow(data))
+split_index <- floor(0.70 * nrow(data))
 split_date <- data$date[split_index]
 
 train_data <- data[1:split_index, ]

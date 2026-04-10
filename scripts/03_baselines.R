@@ -23,7 +23,7 @@ rolling_forecasts <- function(model_name) {
   y <- all_data$gold_close
   point_forecast <- lo80 <- hi80 <- lo95 <- hi95 <- rep(NA_real_, nrow(all_data))
 
-  for (i in seq(2, nrow(all_data))) {
+  for (i in seq(3, nrow(all_data))) {
     forecast_object <- model_functions[[model_name]](y[1:(i - 1)])
     point_forecast[i] <- as.numeric(forecast_object$mean[1])
     lo80[i] <- as.numeric(forecast_object$lower[1, "80%"])
